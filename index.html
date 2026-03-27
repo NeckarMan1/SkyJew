@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BazaarBot — Skyblock Flipper</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #0f1318;
+    --border: #1e2530;
+    --accent: #f0a500;
+    --accent2: #00d4ff;
+    --green: #00ff88;
+    --red: #ff4466;
+    --muted: #4a5568;
+    --text: #c8d6e5;
+    --text-dim: #6b7a90;
+    --glow: rgba(240,165,0,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 1.4rem;
+    color: var(--accent);
+    text-shadow: 0 0 20px var(--accent);
+    letter-spacing: 2px;
+  }
+
+  .logo span { color: var(--accent2); }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    color: var(--green);
+  }
+
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Controls */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto auto;
+    gap: 12px;
+    margin-bottom: 24px;
+    align-items: end;
+  }
+
+  .field label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .field input, .field select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    padding: 9px 12px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus, .field select:focus {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.1);
+  }
+
+  .field select option { background: #111; }
+
+  .btn-scan {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 9px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-scan:hover { background: #ffbb1a; box-shadow: 0 0 16px var(--glow); }
+  .btn-scan:disabled { background: var(--muted); cursor: not-allowed; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .stat-value.green { color: var(--green); }
+  .stat-value.cyan { color: var(--accent2); }
+
+  /* Table */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    color: var(--accent2);
+  }
+
+  .last-update {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 18px;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  th:hover { color: var(--accent2); }
+
+  td {
+    padding: 11px 18px;
+    font-size: 0.82rem;
+    border-bottom: 1px solid rgba(30,37,48,0.6);
+    transition: background 0.15s;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .item-name { color: var(--accent); font-weight: bold; }
+
+  .profit-val { color: var(--green); font-family: 'Orbitron', sans-serif; font-size: 0.78rem; }
+  .profit-val.low { color: var(--red); }
+
+  .margin-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .bar-track {
+    width: 60px; height: 5px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  .bar-fill.med { background: var(--accent); }
+  .bar-fill.low { background: var(--red); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+  }
+
+  .badge-hot { background: rgba(255,68,102,0.15); color: var(--red); border: 1px solid rgba(255,68,102,0.3); }
+  .badge-ok  { background: rgba(0,255,136,0.1);  color: var(--green); border: 1px solid rgba(0,255,136,0.25); }
+  .badge-meh { background: rgba(240,165,0,0.1);  color: var(--accent); border: 1px solid rgba(240,165,0,0.25); }
+
+  /* Loading state */
+  .loading-row td {
+    text-align: center;
+    padding: 48px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent2);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 10px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Log panel */
+  .log-panel {
+    margin-top: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .log-header {
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .log-body {
+    height: 120px;
+    overflow-y: auto;
+    padding: 10px 18px;
+    font-size: 0.73rem;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+
+  .log-body::-webkit-scrollbar { width: 4px; }
+  .log-body::-webkit-scrollbar-track { background: transparent; }
+  .log-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-line.ok { color: var(--green); }
+  .log-line.info { color: var(--accent2); }
+  .log-line.warn { color: var(--accent); }
+
+  /* Tooltip note */
+  .api-note {
+    margin-top: 14px;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .api-note a { color: var(--accent2); text-decoration: none; }
+  .api-note a:hover { text-decoration: underline; }
+
+  @media (max-width: 700px) {
+    .controls { grid-template-columns: 1fr 1fr; }
+    .stats-bar { grid-template-columns: 1fr 1fr; }
+    .btn-scan { grid-column: span 2; }
+    .controls { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">SKY<span>JEW</span></div>
+    <div class="status-pill"><div class="dot"></div> LIVE SCANNING</div>
+  </header>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="field">
+      <label>Min Profit (coins)</label>
+      <input type="number" id="minProfit" value="50000" step="10000">
+    </div>
+    <div class="field">
+      <label>Min Margin %</label>
+      <input type="number" id="minMargin" value="2" step="0.5" min="0">
+    </div>
+    <div class="field">
+      <label>Sort By</label>
+      <select id="sortBy">
+        <option value="profit">Profit / Order</option>
+        <option value="margin">Margin %</option>
+        <option value="volume">Weekly Volume</option>
+        <option value="coinsMoved">Coins Moved</option>
+      </select>
+    </div>
+    <div class="field" style="display:flex;align-items:flex-end">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap">
+        <input type="checkbox" id="hideEnchants" checked style="width:15px;height:15px;accent-color:var(--accent2);cursor:pointer">
+        Hide Enchants
+      </label>
+    </div>
+    <button class="btn-scan" id="scanBtn" onclick="runScan()">▶ SCAN</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">Items Scanned</div>
+      <div class="stat-value" id="statScanned">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-before"></div>
+      <div class="stat-label">Flips Found</div>
+      <div class="stat-value green" id="statFlips">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Best Profit</div>
+      <div class="stat-value cyan" id="statBest">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Last Scan</div>
+      <div class="stat-value" id="statTime" style="font-size:0.75rem; color: var(--text-dim)">—</div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="table-title">FLIP OPPORTUNITIES</div>
+      <div class="last-update" id="updateTag">Not scanned yet</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortTable('name')">Item ↕</th>
+          <th onclick="sortTable('buyPrice')">Buy Order</th>
+          <th onclick="sortTable('sellPrice')">Sell Offer</th>
+          <th onclick="sortTable('profit')">Profit / Unit ↕</th>
+          <th onclick="sortTable('margin')">Margin %</th>
+          <th onclick="sortTable('volume')">Weekly Vol</th>
+          <th onclick="sortTable('buyLiquidity')" title="Buy order price × sells per hour">Buy Liq/h ↕</th>
+          <th onclick="sortTable('sellLiquidity')" title="Sell offer price × buys per hour">Sell Liq/h ↕</th>
+          <th>Risk</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr class="loading-row"><td colspan="9">Click ▶ SCAN to fetch Bazaar data</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Log -->
+  <div class="log-panel">
+    <div class="log-header">Activity Log</div>
+    <div class="log-body" id="logBody">
+      <div class="log-line info">[BOOT] BazaarBot initialized</div>
+      <div class="log-line">[INFO] Using Hypixel Bazaar API (no key required)</div>
+      <div class="log-line warn">[NOTE] Set filters above, then click SCAN</div>
+    </div>
+  </div>
+
+  <div class="api-note">
+    Data from <a href="https://api.hypixel.net/skyblock/bazaar" target="_blank">api.hypixel.net/skyblock/bazaar</a> — no API key needed &nbsp;·&nbsp;
+    Prices update every ~60s on Hypixel's end
+  </div>
+
+</div>
+
+<script>
+let allFlips = [];
+let sortKey = 'profit';
+let sortDir = -1;
+
+function log(msg, type = '') {
+  const body = document.getElementById('logBody');
+  const el = document.createElement('div');
+  el.className = 'log-line ' + type;
+  const t = new Date().toLocaleTimeString();
+  el.textContent = `[${t}] ${msg}`;
+  body.appendChild(el);
+  body.scrollTop = body.scrollHeight;
+}
+
+function fmt(n) {
+  if (n >= 1e9) return (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return Math.round(n).toLocaleString();
+}
+
+function risk(margin, volume) {
+  if (margin < 1.5 || volume < 50000) return '<span class="badge badge-hot">RISKY</span>';
+  if (margin > 4 && volume > 500000) return '<span class="badge badge-ok">SAFE</span>';
+  return '<span class="badge badge-meh">MEDIUM</span>';
+}
+
+function barClass(margin) {
+  if (margin >= 4) return '';
+  if (margin >= 2) return 'med';
+  return 'low';
+}
+
+async function runScan() {
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true;
+  btn.textContent = '⟳ SCANNING…';
+  document.getElementById('tableBody').innerHTML =
+    `<tr class="loading-row"><td colspan="9"><span class="spinner"></span>Fetching Bazaar data…</td></tr>`;
+
+  log('Connecting to Hypixel Bazaar API…', 'info');
+
+  try {
+    const URLS = [
+      'https://api.hypixel.net/skyblock/bazaar',
+      'https://corsproxy.io/?url=https://api.hypixel.net/skyblock/bazaar',
+      'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.hypixel.net/skyblock/bazaar'),
+    ];
+
+    let res, lastErr;
+    for (const url of URLS) {
+      try {
+        log('Trying: ' + url.split('?')[0] + '…', 'info');
+        res = await fetch(url);
+        if (res.ok) break;
+      } catch(e) { lastErr = e; res = null; }
+    }
+    if (!res || !res.ok) throw new Error(lastErr?.message || `All endpoints failed`);
+    const data = await res.json();
+
+    if (!data.success) throw new Error('API returned success=false');
+
+    log(`API OK — parsing ${Object.keys(data.products).length} products…`, 'ok');
+
+    const minProfit = parseFloat(document.getElementById('minProfit').value) || 0;
+    const minMargin = parseFloat(document.getElementById('minMargin').value) || 0;
+
+    allFlips = [];
+
+    for (const [id, prod] of Object.entries(data.products)) {
+      const qs = prod.quick_status;
+      if (!qs) continue;
+
+      const buyPrice  = qs.sellPrice;  // price you PAY (instant-buy from sellers)
+      const sellPrice = qs.buyPrice;   // price you RECEIVE (sell to buyer orders)
+      const vol = qs.sellMovingWeek || 0;
+
+      if (!buyPrice || !sellPrice || sellPrice <= buyPrice) continue;
+
+      const TAX = 0.9875; // 1.25% Bazaar tax on filled sell orders
+      const netSell = sellPrice * TAX;
+      const profit = netSell - buyPrice;
+      const margin = (profit / buyPrice) * 100;
+
+      // approximate per-hour rates
+      const sellsPerHour  = (qs.sellMovingWeek || 0) / (7 * 24);
+      const buysPerHour   = (qs.buyMovingWeek  || 0) / (7 * 24);
+      const buyLiquidity  = netSell * sellsPerHour;  // net sell price (after tax) × sells/h
+      const sellLiquidity = sellPrice * buysPerHour; // sell offer price × buys/h
+      const coinsMoved    = buyLiquidity + sellLiquidity;
+
+      const hideEnchants = document.getElementById('hideEnchants').checked;
+      if (hideEnchants && (id.startsWith('ENCHANTMENT_') || id.includes('_BOOK'))) continue;
+
+      if (profit < minProfit || margin < minMargin) continue;
+
+      const name = id.replace(/_/g, ' ');
+      allFlips.push({ name, buyPrice, sellPrice, profit, margin, volume: vol, buyLiquidity, sellLiquidity, coinsMoved });
+    }
+
+    log(`Found ${allFlips.length} flip opportunities`, allFlips.length > 0 ? 'ok' : 'warn');
+
+    document.getElementById('statScanned').textContent = Object.keys(data.products).length;
+    document.getElementById('statFlips').textContent   = allFlips.length;
+
+    const best = allFlips.reduce((a,b) => b.profit > a.profit ? b : a, { profit: 0 });
+    document.getElementById('statBest').textContent = best.profit > 0 ? fmt(best.profit) + ' ¢' : '—';
+    document.getElementById('statTime').textContent = new Date().toLocaleTimeString();
+    document.getElementById('updateTag').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+    renderTable();
+
+  } catch (e) {
+    log('Error: ' + e.message, 'warn');
+    document.getElementById('tableBody').innerHTML =
+      `<tr class="loading-row"><td colspan="9">⚠ Failed to fetch: ${e.message}</td></tr>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ SCAN';
+}
+
+function sortTable(key) {
+  if (sortKey === key) sortDir *= -1;
+  else { sortKey = key; sortDir = -1; }
+  renderTable();
+}
+
+function renderTable() {
+  const sortBy = document.getElementById('sortBy').value;
+  const effectiveKey = sortKey === 'profit' && sortBy !== 'profit'
+    ? sortBy : sortKey;
+
+  const sorted = [...allFlips].sort((a, b) =>
+    sortDir * (a[effectiveKey] > b[effectiveKey] ? 1 : -1)
+  );
+
+  const tbody = document.getElementById('tableBody');
+
+  if (sorted.length === 0) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="9">No flips match current filters — try lowering thresholds</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = sorted.slice(0, 60).map(f => {
+    const pct = Math.min(100, (f.margin / 10) * 100);
+    const bc  = barClass(f.margin);
+    return `
+    <tr>
+      <td class="item-name">${f.name}</td>
+      <td>${fmt(f.buyPrice)}</td>
+      <td>${fmt(f.sellPrice)}</td>
+      <td class="profit-val${f.profit < 100000 ? ' low' : ''}">${fmt(f.profit)}</td>
+      <td>
+        <div class="margin-bar">
+          <div class="bar-track"><div class="bar-fill ${bc}" style="width:${pct}%"></div></div>
+          ${f.margin.toFixed(2)}%
+        </div>
+      </td>
+      <td>${fmt(f.volume)}</td>
+      <td style="color:var(--accent2)">${fmt(f.buyLiquidity)}</td>
+      <td style="color:var(--accent2)">${fmt(f.sellLiquidity)}</td>
+      <td>${risk(f.margin, f.volume)}</td>
+    </tr>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
